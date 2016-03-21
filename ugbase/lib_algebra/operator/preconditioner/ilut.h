@@ -1,34 +1,3 @@
-/*
- * Copyright (c) 2010-2015:  G-CSC, Goethe University Frankfurt
- * Author: Martin Rupp
- * 
- * This file is part of UG4.
- * 
- * UG4 is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License version 3 (as published by the
- * Free Software Foundation) with the following additional attribution
- * requirements (according to LGPL/GPL v3 §7):
- * 
- * (1) The following notice must be displayed in the Appropriate Legal Notices
- * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
- * 
- * (2) The following notice must be displayed at a prominent place in the
- * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
- * 
- * (3) The following bibliography is recommended for citation and must be
- * preserved in all covered files:
- * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
- *   parallel geometric multigrid solver on hierarchically distributed grids.
- *   Computing and visualization in science 16, 4 (2013), 151-164"
- * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
- *   flexible software system for simulating pde based models on high performance
- *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- */
 
 #ifndef __H__UG__LIB_DISC__OPERATOR__LINEAR_OPERATOR__ILUT__
 #define __H__UG__LIB_DISC__OPERATOR__LINEAR_OPERATOR__ILUT__
@@ -79,18 +48,19 @@ class ILUTPreconditioner : public IPreconditioner<TAlgebra>
 		typedef IPreconditioner<TAlgebra> base_type;
 
 	public:
-	//	Constructor
-		ILUTPreconditioner(double eps=1e-6) :
-			m_eps(eps), m_info(false), m_bSort(true)
+	///	Constructor
+		ILUTPreconditioner(double eps=1e-6)
+			: m_eps(eps), m_info(false), m_bSort(true), m_bSortIsIdentity(false)
 		{};
 
 	/// clone constructor
-		ILUTPreconditioner( const ILUTPreconditioner<TAlgebra> &parent )
+		ILUTPreconditioner(const ILUTPreconditioner<TAlgebra> &parent)
 			: base_type(parent)
 		{
 			m_eps = parent.m_eps;
 			set_info(parent.m_info);
 			set_sort(parent.m_bSort);
+			m_bSortIsIdentity = parent.m_bSortIsIdentity;
 		}
 
 	///	Clone
@@ -100,10 +70,9 @@ class ILUTPreconditioner : public IPreconditioner<TAlgebra>
 		}
 
 
-	// 	Destructor
+	///	Destructor
 		virtual ~ILUTPreconditioner()
-		{
-		};
+		{};
 
 	///	returns if parallel solving is supported
 		virtual bool supports_parallel() const {return true;}
@@ -122,7 +91,8 @@ class ILUTPreconditioner : public IPreconditioner<TAlgebra>
 		
 		virtual std::string config_string() const
 		{
-			std::stringstream ss ; ss << "ILUT(threshold = " << m_eps << ", sort = " << (m_bSort?"true":"false") << ")";
+			std::stringstream ss;
+			ss << "ILUT(threshold = " << m_eps << ", sort = " << (m_bSort?"true":"false") << ")";
 			if(m_eps == 0.0) ss << " = Sparse LU";
 			return ss.str();
 		}
@@ -166,6 +136,34 @@ class ILUTPreconditioner : public IPreconditioner<TAlgebra>
 			std::vector<IndexLayout::Element> vIndex;
 			CollectUniqueElements(vIndex,  mat.layouts()->slave());
 			SetDirichletRow(m2, vIndex);
+
+			// Even after this setting of Dirichlet rows, it is possible that there are
+			// zero rows on a proc because of the distribution:
+			// For example, if one has a horizontal grid interface between two SHADOW_RIM_COPY
+			// vertices, but the shadowing element for the hSlave side is vMaster (without being in
+			// any horizontal interface). Then, as the horizontal interface (on the shadowed level)
+			// is not part of the algebraic layouts, the hSlave is not converted into a Dirichlet row
+			// by the previous commands.
+			// As a first aid, we will simply convert any zero row on the current proc into a
+			// Dirichlet row.
+			// TODO: The corresponding rhs vector entry could be non-zero!
+			// It is definitely not set to zero by change_storage_type(PST_UNIQUE) as the index is not contained
+			// in the vector layouts either. Still, the defect assembling process might contain a vertex
+			// loop and assemble something that is not solution-dependent! What do we do then?
+			size_t nInd = m2.num_rows();
+			size_t cnt = 0;
+			for (size_t i = 0; i < nInd; ++i)
+			{
+				if (!m2.num_connections(i))
+				{
+					m2(i,i) = 1.0;
+					++cnt;
+				}
+			}
+#ifndef NDEBUG
+			if (cnt) UG_LOG_ALL_PROCS("Converted "<<cnt<<" zero rows into Dirichlet rows.\n");
+#endif
+
 			return preprocess_mat2(m2);
 #else
 			return preprocess_mat2(mat);

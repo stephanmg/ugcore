@@ -185,6 +185,18 @@ UG_API std::string MakeTmpFile(std::string filename, const std::string &extensio
 ///	Changes the current directory
 UG_API void ChangeDirectory(std::string dir);
 
+
+////////////////////////////////////////////////////////////////////////////////
+///	searches the file in the standard paths.
+/**	The checking order is the following:
+ *		- absolute or relative path to working directory
+ * 		- relative path regarding the current script path (PathProvider::get_current_path())
+ *
+ * \return	the full path (including the filename) at which the file was found, or an
+ *			empty string if no matching file was found.
+ */
+std::string FindFileInStandardPaths(const char* filename);
+
 // end group ugbase_common_io
 /// \}
 

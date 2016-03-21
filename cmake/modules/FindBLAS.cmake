@@ -64,12 +64,12 @@ macro(check_fortran_libraries DEFINITIONS LIBRARIES _prefix _name _flags _list _
       elseif ( APPLE )
         find_library(${_prefix}_${_library}_LIBRARY
                     NAMES ${_library}
-                    PATHS "${_andpaths}" ENV DYLD_LIBRARY_PATH
+                    PATHS ${_andpaths} ENV DYLD_LIBRARY_PATH
                     )
       else ()
         find_library(${_prefix}_${_library}_LIBRARY
                     NAMES ${_library}
-                    PATHS "${_andpaths}" ENV LD_LIBRARY_PATH
+                    PATHS ${_andpaths} ENV LD_LIBRARY_PATH
                     )
       endif()
       mark_as_advanced(${_prefix}_${_library}_LIBRARY)
@@ -149,10 +149,10 @@ else()
   set( BLAS_LIBRARIES_DIR "" )
   
   set(BLAS_SEARCH_PATHS 
-      "${CGAL_TAUCS_LIBRARIES_DIR} ENV LAPACK_LIB_DIR ")
-      
+      "${CGAL_TAUCS_LIBRARIES_DIR} $ENV{BLAS_LIB_DIR}")
+  
   set(BLAS_UNIX_SEARCH_PATHS
-      "/usr/local/lib;/usr/lib;/usr/local/lib64;/usr/lib64;/bgsys/local/lib")
+      "/usr/local/lib;/usr/lib;/usr/local/lib64;/usr/lib64")
 
     #
     # If Unix, search for BLAS function in possible libraries
@@ -166,7 +166,7 @@ else()
       BLAS
       sgemm
       ""
-      "esslbg;xlopt;xlf90_r;xlfmath;xl;m;rt;dl;pthread"
+      "esslbg;xlf90_r;xlfmath;xl;m;rt;dl;pthread"  #leaving out xlopt; not needed?
       "/opt/ibmmath/lib64;/opt/ibmcmp/xlf/14.1/lib64" "${BLAS_UNIX_SEARCH_PATHS}"
       )
     endif()
@@ -289,6 +289,19 @@ else()
       sgemm
       ""
       "mkl_intel_lp64;mkl_intel_thread;mkl_core;guide;pthread"
+      "${BLAS_SEARCH_PATHS}" "${BLAS_UNIX_SEARCH_PATHS}"
+      )
+    endif()
+
+    #JURECA: BLAS in intel mkl library? (em64t 64bit)
+    if(NOT BLAS_LIBRARIES)
+      check_fortran_libraries(
+      BLAS_DEFINITIONS
+      BLAS_LIBRARIES
+      BLAS
+      sgemm
+      ""
+      "mkl_intel_lp64;mkl_intel_thread;mkl_core;mkl_intel_thread;iomp5;pthread"
       "${BLAS_SEARCH_PATHS}" "${BLAS_UNIX_SEARCH_PATHS}"
       )
     endif()

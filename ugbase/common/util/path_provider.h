@@ -38,6 +38,8 @@
 #include <stack>
 
 #include "common/util/file_util.h"
+#include "common/util/os_info.h"
+
 
 namespace ug
 {
@@ -50,11 +52,9 @@ namespace ug
 enum PathTypes
 {
 	BIN_PATH = 0,	///< path in which the binary lies
-	DATA_PATH,
 	SCRIPT_PATH,
 	ROOT_PATH,
 	PLUGIN_PATH,
-	GRID_PATH,
 	APPS_PATH,		///< path in which the application-scripts lie
 
 //	always last
@@ -139,8 +139,10 @@ class PathProvider
 	 */
 		static inline bool get_filename_relative_to_current_path(const std::string &relativeFilename, std::string &absoluteFilename)
 		{
+			const char* pathSep = GetPathSeparator();
+
 			if(inst().has_current_path() == false) return false;
-			absoluteFilename = inst().get_current_path() + "/" + relativeFilename;
+			absoluteFilename = inst().get_current_path() + pathSep + relativeFilename;
 			return FileExists(absoluteFilename.c_str());
 		}
 
@@ -151,8 +153,10 @@ class PathProvider
 	 */
 		static inline bool get_filename_relative_to_path(PathTypes pathType, const std::string &relativeFilename, std::string &absoluteFilename)
 		{
+			const char* pathSep = GetPathSeparator();
+
 			if(inst().has_path(pathType) == false) return false;
-			absoluteFilename = inst().get_path(pathType) + "/" + relativeFilename;
+			absoluteFilename = inst().get_path(pathType) + pathSep + relativeFilename;
 			return FileExists(absoluteFilename.c_str());
 		}
 

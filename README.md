@@ -1,13 +1,11 @@
-ugcore - core functionality of UG4. Includes sources, build-scripts, and utility-scripts
+#ugcore
 
-Copyright 2015 G-CSC, Goethe University Frankfurt
+[![Build Status](https://travis-ci.org/UG4/ugcore.svg?branch=master)](https://travis-ci.org/UG4/ugcore)
 
-Please have a look at 'ughub' if you want to use this package:
+core functionality of **UG4**. Includes sources, build-scripts,
+and utility-scripts
 
-https://github.com/UG4/ughub.git
+Copyright 2009-2015 Goethe Center for Scientific Computing, University Frankfurt
 
-Use 'ughub init' to initialize a directory for use with ughub.
-
-Use 'ughub listpackages' to view a list of all available packages.
-
-Use 'ughub install ugcore' to install this package.
+Please install/clone this repository through UG4's package manager
+[ughub](https://github.com/UG4/ughub).
