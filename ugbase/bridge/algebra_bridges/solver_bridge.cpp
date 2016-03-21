@@ -7,7 +7,7 @@
  * UG4 is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License version 3 (as published by the
  * Free Software Foundation) with the following additional attribution
- * requirements (according to LGPL/GPL v3 §7):
+ * requirements (according to LGPL/GPL v3 ��7):
  * 
  * (1) The following notice must be displayed in the Appropriate Legal Notices
  * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
@@ -20,7 +20,7 @@
  * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
  *   parallel geometric multigrid solver on hierarchically distributed grids.
  *   Computing and visualization in science 16, 4 (2013), 151-164"
- * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ * "Vogel, A., Reiter, S., Rupp, M., N��gel, A., and Wittum, G. UG4 -- a novel
  *   flexible software system for simulating pde based models on high performance
  *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
  * 
@@ -48,6 +48,7 @@
 #include "lib_algebra/operator/linear_solver/analyzing_solver.h"
 #include "lib_algebra/operator/linear_solver/cg.h"
 #include "lib_algebra/operator/linear_solver/bicgstab.h"
+#include "lib_algebra/operator/linear_solver/idr.h"
 #include "lib_algebra/operator/linear_solver/gmres.h"
 #include "lib_algebra/operator/linear_solver/lu.h"
 #include "lib_algebra/operator/linear_solver/agglomerating_solver.h"
@@ -213,6 +214,19 @@ static void Algebra(Registry& reg, string grp)
 			.add_method("set_min_orthogonality", &T::set_min_orthogonality)
 			.set_construct_as_smart_pointer(true);
 		reg.add_class_to_group(name, "BiCGStab", tag);
+	}
+
+//  IDR Solver
+	{
+		typedef IDR<vector_type> T;
+		typedef IPreconditionedLinearOperatorInverse<vector_type> TBase;
+		string name = string("IDR").append(suffix);
+		reg.add_class_<T,TBase>(name, grp, "IDR Solver")
+			.add_constructor()
+			. ADD_CONSTRUCTOR( (SmartPtr<ILinearIterator<vector_type,vector_type> > ) )("precond")
+			. ADD_CONSTRUCTOR( (SmartPtr<ILinearIterator<vector_type,vector_type> >, SmartPtr<IConvergenceCheck<vector_type> >) )("precond#convCheck")
+			.set_construct_as_smart_pointer(true);
+		reg.add_class_to_group(name, "IDR", tag);
 	}
 
 // 	GMRES Solver
